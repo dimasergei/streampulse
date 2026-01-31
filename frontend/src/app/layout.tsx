@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${fontBody.className} ${fontBody.variable} ${fontMono.variable}`}>{children}</body>
+      <body className={`${fontBody.className} ${fontBody.variable} ${fontMono.variable} bg-[#0A0E27] text-white overflow-x-hidden`}>{children}</body>
     </html>
   )
 }

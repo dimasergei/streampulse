@@ -1,478 +1,281 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Activity, 
-  AlertTriangle, 
-  TrendingUp, 
-  Zap, 
-  Globe, 
-  Shield, 
-  BarChart3, 
-  Settings, 
-  Play, 
-  Pause, 
-  RefreshCw,
-  Sparkles,
-  ArrowRight,
-  MapPin,
-  Clock,
-  Target,
-  Database,
-  Cpu,
-  Monitor,
-  Wifi,
-  Server,
-  Cloud,
-  Router
-} from 'lucide-react'
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, CheckCircle2, Zap, Shield, BarChart3, Globe, Play, Activity, AlertTriangle, TrendingUp, MapPin, Server, Wifi, Clock, Users, Cpu } from 'lucide-react';
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { AnomalySimulator } from '@/components/anomaly-simulator'
-import { GeographicMap } from '@/components/geographic-map'
-import { AnimatedCharts } from '@/components/animated-charts'
-import { cn } from '@/lib/utils'
-
-interface LocationData {
-  id: string
-  name: string
-  country: string
-  coordinates: { x: number; y: number }
-  status: 'normal' | 'warning' | 'critical'
-  latency: number
-  throughput: number
-  errors: number
-  lastUpdate: Date
-}
-
-interface AnomalyEvent {
-  id: string
-  type: 'spike' | 'drop' | 'pattern' | 'outlier'
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  location: string
-  metric: string
-  value: number
-  threshold: number
-  timestamp: Date
-  description: string
-}
-
-const INITIAL_LOCATIONS: LocationData[] = [
-  {
-    id: '1',
-    name: 'US-East',
-    country: 'United States',
-    coordinates: { x: 25, y: 35 },
-    status: 'normal',
-    latency: 45,
-    throughput: 2500,
-    errors: 0.2,
-    lastUpdate: new Date()
-  },
-  {
-    id: '2',
-    name: 'US-West',
-    country: 'United States',
-    coordinates: { x: 15, y: 40 },
-    status: 'normal',
-    latency: 62,
-    throughput: 1800,
-    errors: 0.1,
-    lastUpdate: new Date()
-  },
-  {
-    id: '3',
-    name: 'EU-West',
-    country: 'Ireland',
-    coordinates: { x: 48, y: 25 },
-    status: 'warning',
-    latency: 89,
-    throughput: 1200,
-    errors: 2.1,
-    lastUpdate: new Date()
-  },
-  {
-    id: '4',
-    name: 'APAC',
-    country: 'Singapore',
-    coordinates: { x: 75, y: 55 },
-    status: 'normal',
-    latency: 120,
-    throughput: 900,
-    errors: 0.5,
-    lastUpdate: new Date()
-  },
-  {
-    id: '5',
-    name: 'South America',
-    country: 'Brazil',
-    coordinates: { x: 35, y: 70 },
-    status: 'normal',
-    latency: 156,
-    throughput: 600,
-    errors: 1.2,
-    lastUpdate: new Date()
-  },
-  {
-    id: '6',
-    name: 'Africa',
-    country: 'South Africa',
-    coordinates: { x: 52, y: 65 },
-    status: 'critical',
-    latency: 234,
-    throughput: 300,
-    errors: 8.7,
-    lastUpdate: new Date()
-  }
-]
-
-const INITIAL_CHART_DATA = [
-  { time: '10:00:00', value: 45 },
-  { time: '10:00:05', value: 48 },
-  { time: '10:00:10', value: 52 },
-  { time: '10:00:15', value: 49 },
-  { time: '10:00:20', value: 55 },
-  { time: '10:00:25', value: 58 },
-  { time: '10:00:30', value: 62 },
-  { time: '10:00:35', value: 65 },
-  { time: '10:00:40', value: 61 },
-  { time: '10:00:45', value: 67 }
-]
-
-export default function StreamPulse() {
-  const [locations, setLocations] = useState<LocationData[]>(INITIAL_LOCATIONS)
-  const [chartData, setChartData] = useState(INITIAL_CHART_DATA)
-  const [isSimulating, setIsSimulating] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null)
-  const [recentAnomalies, setRecentAnomalies] = useState<AnomalyEvent[]>([])
+export default function Home() {
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [metrics, setMetrics] = useState({
+    responseTime: 45,
+    throughput: 1250,
+    errorRate: 0.1,
+    anomalies: 0
+  });
+  const [locations, setLocations] = useState([
+    { name: 'US East', status: 'healthy', latency: 12, load: 65 },
+    { name: 'US West', status: 'healthy', latency: 18, load: 72 },
+    { name: 'Europe', status: 'warning', latency: 25, load: 84 },
+    { name: 'Asia', status: 'healthy', latency: 35, load: 58 },
+    { name: 'Australia', status: 'healthy', latency: 42, load: 45 },
+    { name: 'South America', status: 'healthy', latency: 28, load: 51 }
+  ]);
 
   useEffect(() => {
-    if (!isSimulating) return
+    if (!isSimulating) return;
 
     const interval = setInterval(() => {
-      // Update locations with random changes
-      setLocations(prevLocations => 
-        prevLocations.map(location => {
-          const latencyChange = (Math.random() - 0.5) * 20
-          const throughputChange = (Math.random() - 0.5) * 200
-          const errorChange = (Math.random() - 0.5) * 2
-          
-          const newLatency = Math.max(10, Math.min(500, location.latency + latencyChange))
-          const newThroughput = Math.max(100, Math.min(5000, location.throughput + throughputChange))
-          const newErrors = Math.max(0, Math.min(20, location.errors + errorChange))
-          
-          // Determine status based on metrics
-          let status: 'normal' | 'warning' | 'critical' = 'normal'
-          if (newLatency > 200 || newErrors > 5) {
-            status = 'critical'
-          } else if (newLatency > 100 || newErrors > 2) {
-            status = 'warning'
-          }
-          
-          return {
-            ...location,
-            latency: Math.round(newLatency),
-            throughput: Math.round(newThroughput),
-            errors: Math.round(newErrors * 10) / 10,
-            status,
-            lastUpdate: new Date()
-          }
-        })
-      )
-    }, 3000)
+      setMetrics(prev => ({
+        responseTime: Math.max(20, Math.min(200, prev.responseTime + (Math.random() - 0.5) * 20)),
+        throughput: Math.max(800, Math.min(2000, prev.throughput + (Math.random() - 0.5) * 100)),
+        errorRate: Math.max(0, Math.min(5, prev.errorRate + (Math.random() - 0.5) * 0.5)),
+        anomalies: Math.max(0, Math.min(10, prev.anomalies + Math.floor(Math.random() * 3)))
+      }));
 
-    return () => clearInterval(interval)
-  }, [isSimulating])
+      setLocations(prev => prev.map(loc => ({
+        ...loc,
+        load: Math.max(20, Math.min(95, loc.load + (Math.random() - 0.5) * 10)),
+        latency: Math.max(10, Math.min(100, loc.latency + (Math.random() - 0.5) * 5)),
+        status: Math.random() > 0.9 ? (Math.random() > 0.5 ? 'warning' : 'critical') : 'healthy'
+      })));
+    }, 1000);
 
-  const handleAnomalyDetected = (anomaly: AnomalyEvent) => {
-    setRecentAnomalies(prev => [anomaly, ...prev.slice(0, 9)])
-    
-    // Update affected location
-    setLocations(prevLocations =>
-      prevLocations.map(location =>
-        location.name === anomaly.location
-          ? { ...location, status: anomaly.severity === 'critical' ? 'critical' : 'warning' }
-          : location
-      )
-    )
-  }
-
-  const handleLocationClick = (location: LocationData) => {
-    setSelectedLocation(location)
-  }
-
-  const resetData = () => {
-    setLocations(INITIAL_LOCATIONS)
-    setChartData(INITIAL_CHART_DATA)
-    setRecentAnomalies([])
-    setSelectedLocation(null)
-    setIsSimulating(false)
-  }
+    return () => clearInterval(interval);
+  }, [isSimulating]);
 
   return (
-    <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full surface-glass-subtle z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center shadow-glow">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-gradient">StreamPulse</h1>
-                <p className="text-xs text-muted-foreground">Real-time Anomaly Detection</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetData}
-                className="border-border hover:bg-muted/50"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "bg-emerald-500/15 text-emerald-200 border-emerald-500/30",
-                  isSimulating && "bg-red-500/15 text-red-200 border-red-500/30"
-                )}
-              >
-                <span className={cn(
-                  "mr-2 inline-block h-2 w-2 rounded-full",
-                  isSimulating ? "bg-red-400 pulse-glow" : "bg-emerald-400"
-                )} />
-                {isSimulating ? 'Detecting' : 'Monitoring'}
-              </Badge>
-            </div>
+    <main className="min-h-screen bg-[#0A0E27] text-white overflow-hidden relative selection:bg-blue-500/30 font-sans">
+      
+      {/* 1. ATMOSPHERE (The "Enterprise" Glow) */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-900/20 rounded-full blur-[120px]" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+      </div>
+
+      {/* 2. NAVBAR (Floating Glass) */}
+      <nav className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-8 py-3 flex items-center gap-12 shadow-2xl">
+          <div className="font-bold text-xl tracking-tighter bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+            StreamPulse
           </div>
+          <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
+            {['Product', 'Solutions', 'Enterprise', 'Pricing'].map((item) => (
+              <a key={item} href="#" className="hover:text-white transition-colors">{item}</a>
+            ))}
+          </div>
+          <button className="bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-full text-sm font-medium transition-all border border-white/5">
+            Sign In
+          </button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center space-x-2 bg-muted/30 rounded-full px-4 py-2 mb-8 surface-glass-subtle">
-              <Sparkles className="w-4 h-4 text-accent" />
-              <span className="text-sm font-medium text-accent-foreground">AI-Powered Detection</span>
-            </div>
-            
-            <h1 className="text-6xl font-bold mb-6 leading-tight text-gradient animate-er-gradient">
-              Real-time
-              <br />
-              Anomaly Detection
-            </h1>
-            
-            <p className="text-xl text-muted-foreground mb-12 leading-relaxed max-w-3xl mx-auto">
-              Advanced AI-powered monitoring system that detects anomalies in real-time across 
-              your global infrastructure with intelligent alerts and predictive insights.
-            </p>
-            
-            <div className="flex items-center justify-center space-x-8">
-              <div className="text-center animate-er-float">
-                <div className="text-3xl font-bold text-gradient">99.9%</div>
-                <div className="text-sm text-muted-foreground">Detection Accuracy</div>
-              </div>
-              <div className="text-center animate-er-float" style={{ animationDelay: '0.5s' }}>
-                <div className="text-3xl font-bold text-gradient">&lt;100ms</div>
-                <div className="text-sm text-muted-foreground">Response Time</div>
-              </div>
-              <div className="text-center animate-er-float" style={{ animationDelay: '1s' }}>
-                <div className="text-3xl font-bold text-gradient">24/7</div>
-                <div className="text-sm text-muted-foreground">Monitoring</div>
-              </div>
-            </div>
+      {/* 3. HERO SECTION (The Big Structure) */}
+      <div className="relative pt-40 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center z-10">
+        
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-8 animate-fade-in-up">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+          </span>
+          Live Stream Monitor
+        </div>
+
+        {/* HEADLINE */}
+        <h1 className="text-6xl md:text-8xl font-bold tracking-tight mb-8 bg-gradient-to-b from-white via-white/90 to-white/50 bg-clip-text text-transparent max-w-5xl">
+          Real-Time Anomaly Detection
+        </h1>
+
+        {/* SUBTITLE */}
+        <p className="text-xl text-gray-400 max-w-2xl mb-12 leading-relaxed">
+          Monitor global infrastructure with sub-millisecond precision. Detect outliers before they become outages.
+        </p>
+
+        {/* CTA BUTTONS */}
+        <div className="flex flex-col sm:flex-row gap-6 mb-20">
+          <button 
+            onClick={() => setIsSimulating(!isSimulating)}
+            className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-semibold text-lg transition-all hover:scale-105 shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] flex items-center gap-2"
+          >
+            {isSimulating ? (
+              <>
+                <Activity className="w-5 h-5" />
+                Stop Simulation
+              </>
+            ) : (
+              <>
+                <Play className="w-5 h-5" />
+                Start Monitoring
+              </>
+            )}
+          </button>
+          <button className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-semibold text-lg backdrop-blur-md transition-all flex items-center gap-2">
+            <Globe className="w-5 h-5" />
+            View Infrastructure
+          </button>
+        </div>
+
+        {/* 4. THE METRIC GLASS BAR (The EnterpriseRAG Signature) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl p-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-2xl shadow-2xl relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <div className="relative flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-white/10">
+            <div className="text-5xl font-bold text-white mb-2 tracking-tight">&lt;100ms</div>
+            <div className="text-sm font-medium text-blue-200/60 uppercase tracking-widest">Response</div>
           </div>
-
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <Card className="surface-glass hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center mb-4">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-lg font-semibold">Instant Detection</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Machine learning algorithms detect anomalies in milliseconds with 99.9% accuracy
-                </p>
-                <div className="flex items-center text-sm text-primary font-medium">
-                  <ArrowRight className="w-4 h-4 mr-1" />
-                  Learn more
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-glass hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary/80 rounded-lg flex items-center justify-center mb-4">
-                  <Globe className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-lg font-semibold">Global Coverage</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Monitor infrastructure across 6 continents with real-time geographic visualization
-                </p>
-                <div className="flex items-center text-sm text-secondary font-medium">
-                  <ArrowRight className="w-4 h-4 mr-1" />
-                  Learn more
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-glass hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-accent to-accent/80 rounded-lg flex items-center justify-center mb-4">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-lg font-semibold">Predictive Alerts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  AI-powered predictions alert you before issues impact your systems
-                </p>
-                <div className="flex items-center text-sm text-accent font-medium">
-                  <ArrowRight className="w-4 h-4 mr-1" />
-                  Learn more
-                </div>
-              </CardContent>
-            </Card>
+          
+          <div className="relative flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-white/10">
+            <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-2 tracking-tight">99.99%</div>
+            <div className="text-sm font-medium text-blue-200/60 uppercase tracking-widest">Uptime</div>
+          </div>
+          
+          <div className="relative flex flex-col items-center justify-center p-4">
+            <div className="text-5xl font-bold text-white mb-2 tracking-tight">24/7</div>
+            <div className="text-sm font-medium text-blue-200/60 uppercase tracking-widest">Active</div>
           </div>
         </div>
-      </section>
 
-      {/* Main Dashboard */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 text-gradient">Live Infrastructure Monitoring</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Monitor your global infrastructure in real-time with advanced anomaly detection and intelligent alerts.
+      </div>
+
+      {/* 5. LIVE INFRASTRUCTURE MONITORING */}
+      <div className="max-w-7xl mx-auto px-6 pb-32">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
+            Live Infrastructure Monitoring
+          </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Real-time monitoring of global infrastructure with advanced anomaly detection.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Global Infrastructure Map */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold">Global Infrastructure Map</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <span className="text-sm text-gray-400">{locations.filter(l => l.status === 'healthy').length} Locations</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {locations.map((location, index) => (
+                <div key={index} className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm font-medium">{location.name}</span>
+                    </div>
+                    <div className={`w-2 h-2 rounded-full ${
+                      location.status === 'healthy' ? 'bg-green-400' : 
+                      location.status === 'warning' ? 'bg-yellow-400' : 'bg-red-400'
+                    }`}></div>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    <div>Latency: {location.latency}ms</div>
+                    <div>Load: {location.load}%</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Real-time Metrics */}
+          <div className="space-y-6">
+            {/* Response Time */}
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Response Time</h3>
+                <Clock className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="text-center">
+                <div className={`text-4xl font-bold mb-2 ${
+                  metrics.responseTime < 50 ? 'text-green-400' : 
+                  metrics.responseTime < 100 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {metrics.responseTime.toFixed(0)}ms
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2 mt-4">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      metrics.responseTime < 50 ? 'bg-green-400' : 
+                      metrics.responseTime < 100 ? 'bg-yellow-400' : 'bg-red-400'
+                    }`}
+                    style={{ width: `${Math.min(100, (metrics.responseTime / 200) * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Throughput */}
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Throughput</h3>
+                <TrendingUp className="w-5 h-5 text-green-400" />
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-green-400 mb-2">
+                  {metrics.throughput.toFixed(0)}
+                </div>
+                <div className="text-sm text-gray-400">requests/sec</div>
+              </div>
+            </div>
+
+            {/* Anomaly Detection */}
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">Anomaly Detection</h3>
+                <AlertTriangle className="w-5 h-5 text-orange-400" />
+              </div>
+              <div className="text-center">
+                <div className={`text-4xl font-bold mb-2 ${
+                  metrics.anomalies === 0 ? 'text-green-400' : 
+                  metrics.anomalies < 5 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {metrics.anomalies}
+                </div>
+                <div className="text-sm text-gray-400">active anomalies</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. FEATURE GRID (Glassmorphism) */}
+      <div className="max-w-7xl mx-auto px-6 pb-32">
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-500/30 transition-all duration-300 hover:-translate-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Activity className="w-7 h-7 text-blue-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-4">Instant Alerts</h3>
+            <p className="text-gray-400 leading-relaxed">
+              Real-time anomaly detection with intelligent alerting and automated incident response.
             </p>
           </div>
 
-          {/* Geographic Map */}
-          <GeographicMap 
-            data={locations}
-            onLocationClick={handleLocationClick}
-          />
-
-          {/* Animated Charts */}
-          <div className="mt-12">
-            <AnimatedCharts 
-              data={chartData}
-              isSimulating={isSimulating}
-            />
+          <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-500/30 transition-all duration-300 hover:-translate-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <TrendingUp className="w-7 h-7 text-blue-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-4">Predictive Insights</h3>
+            <p className="text-gray-400 leading-relaxed">
+              ML-powered predictions that identify potential issues before they impact your systems.
+            </p>
           </div>
 
-          {/* Anomaly Simulator */}
-          <div className="mt-12">
-            <AnomalySimulator
-              onAnomalyDetected={handleAnomalyDetected}
-              isSimulating={isSimulating}
-              onToggleSimulation={() => setIsSimulating(!isSimulating)}
-            />
+          <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-500/30 transition-all duration-300 hover:-translate-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Globe className="w-7 h-7 text-blue-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-4">Global Heatmap</h3>
+            <p className="text-gray-400 leading-relaxed">
+              Visualize system performance across all global regions with interactive geographic maps.
+            </p>
           </div>
-
-          {/* System Status Overview */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="surface-glass">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Locations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{locations.length}</div>
-                <div className="text-xs text-muted-foreground">Active monitoring</div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-glass">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Avg Latency</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Math.round(locations.reduce((sum, loc) => sum + loc.latency, 0) / locations.length)}ms
-                </div>
-                <div className="text-xs text-muted-foreground">Global average</div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-glass">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Throughput</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {Math.round(locations.reduce((sum, loc) => sum + loc.throughput, 0) / 1000)}K/s
-                </div>
-                <div className="text-xs text-muted-foreground">Requests per second</div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-glass">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Error Rate</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {(locations.reduce((sum, loc) => sum + loc.errors, 0) / locations.length).toFixed(1)}%
-                </div>
-                <div className="text-xs text-muted-foreground">Global average</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Features Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-20">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 surface-glass-subtle">
-                <Database className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Real-time Data</h3>
-              <p className="text-muted-foreground">Stream processing at scale</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-secondary/20 to-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4 surface-glass-subtle">
-                <BarChart3 className="w-8 h-8 text-secondary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
-              <p className="text-muted-foreground">ML-powered insights</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-accent/20 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-4 surface-glass-subtle">
-                <Shield className="w-8 h-8 text-accent" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Enterprise Security</h3>
-              <p className="text-muted-foreground">SOC2 compliant</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 surface-glass-subtle">
-                <Cloud className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Cloud Native</h3>
-              <p className="text-muted-foreground">Scalable architecture</p>
-            </div>
-          </div>
-
-          <footer className="mt-14 border-t border-border py-10 text-center">
-            <p className="text-sm text-muted-foreground">© 2026 StreamPulse. Real-time Anomaly Detection Platform.</p>
-          </footer>
         </div>
-      </section>
-    </div>
-  )
+      </div>
+    </main>
+  );
 }

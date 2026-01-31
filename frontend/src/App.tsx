@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, CheckCircle2, Zap, Shield, BarChart3, Globe, Play, Activity, AlertTriangle, TrendingUp, MapPin, Server, Wifi, Clock, Users, Cpu } from 'lucide-react';
+import { startMockStream, type StreamMetrics } from './mock-stream';
 
 export default function Home() {
   const [isSimulating, setIsSimulating] = useState(false);
@@ -21,23 +22,23 @@ export default function Home() {
   useEffect(() => {
     if (!isSimulating) return;
 
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        responseTime: Math.max(20, Math.min(200, prev.responseTime + (Math.random() - 0.5) * 20)),
-        throughput: Math.max(800, Math.min(2000, prev.throughput + (Math.random() - 0.5) * 100)),
-        errorRate: Math.max(0, Math.min(5, prev.errorRate + (Math.random() - 0.5) * 0.5)),
-        anomalies: Math.max(0, Math.min(10, prev.anomalies + Math.floor(Math.random() * 3)))
-      }));
+    const stopStream = startMockStream((streamMetrics: StreamMetrics) => {
+      setMetrics({
+        responseTime: streamMetrics.responseTime,
+        throughput: streamMetrics.throughput,
+        errorRate: streamMetrics.errorRate,
+        anomalies: streamMetrics.anomalies
+      });
 
-      setLocations(prev => prev.map(loc => ({
-        ...loc,
-        load: Math.max(20, Math.min(95, loc.load + (Math.random() - 0.5) * 10)),
-        latency: Math.max(10, Math.min(100, loc.latency + (Math.random() - 0.5) * 5)),
-        status: Math.random() > 0.9 ? (Math.random() > 0.5 ? 'warning' : 'critical') : 'healthy'
+      setLocations(streamMetrics.regions.map(region => ({
+        name: region.name,
+        status: region.status === 'online' ? 'healthy' : region.status === 'degraded' ? 'warning' : 'critical',
+        latency: region.latency,
+        load: 50 + Math.random() * 40
       })));
-    }, 1000);
+    }, 2000);
 
-    return () => clearInterval(interval);
+    return () => stopStream();
   }, [isSimulating]);
 
   return (

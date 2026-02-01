@@ -46,15 +46,15 @@ export default function Home() {
       
       {/* 1. ATMOSPHERE (The "Enterprise" Glow) */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-900/20 rounded-full blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-green-900/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-900/20 rounded-full blur-[120px]" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
       </div>
 
       {/* 2. NAVBAR (Floating Glass) */}
       <nav className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4">
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-8 py-3 flex items-center gap-12 shadow-2xl">
-          <div className="font-bold text-xl tracking-tighter bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+          <div className="font-bold text-xl tracking-tighter bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">
             StreamPulse
           </div>
           <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
@@ -94,7 +94,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row gap-6 mb-20">
           <button 
             onClick={() => setIsSimulating(!isSimulating)}
-            className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-semibold text-lg transition-all hover:scale-105 shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] flex items-center gap-2"
+            className="group relative px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 rounded-2xl font-semibold text-lg transition-all hover:scale-105 shadow-[0_0_40px_-10px_rgba(34,197,94,0.5)] flex items-center gap-2"
           >
             {isSimulating ? (
               <>
